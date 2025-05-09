@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mysql_practice:
+    image: mysql:latest
+    container_name: mysql_practice
+    restart: always
+    environment:
+      MYSQL_DATABASE: employee_management
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    env_file:
+      - .env
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_practice:/var/lib/mysql
+    networks:
+      - practice
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: practice_app
+    depends_on:
+      mysql_practice:
+        condition: service_healthy
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql_practice:3306/employee_management?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    env_file:
+      - .env
+    networks:
+      - practice
+
+networks:
+  practice:
+
+volumes:
+  mysql_practice:

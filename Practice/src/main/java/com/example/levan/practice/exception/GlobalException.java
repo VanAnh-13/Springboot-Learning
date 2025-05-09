@@ -1,0 +1,60 @@
+package com.example.levan.practice.exception;
+
+import com.example.levan.practice.response.ApiResponse;
+import jakarta.validation.ValidationException;
+import org.apache.coyote.BadRequestException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
+
+import java.util.List;
+
+@RestControllerAdvice
+public class GlobalException {
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Object>> handleException(Exception exception) {
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .data(null)
+                .message(exception.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleResourceNotFoundException(ResourceNotFoundException resourceNotFoundException) {
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .data(null)
+                .message(resourceNotFoundException.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(HttpClientErrorException.BadRequest.class)
+    public ResponseEntity<ApiResponse<Object>> handleBadRequestException(BadRequestException badRequestException) {
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .data(null)
+                .message(badRequestException.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleValidationException(MethodArgumentNotValidException methodArgumentNotValidException) {
+        List<String> errors = methodArgumentNotValidException.getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .toList();
+
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .data(errors)
+                .message("Validation failed")
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+}
